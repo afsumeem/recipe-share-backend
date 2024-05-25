@@ -77,6 +77,16 @@ const run = async () => {
       res.json(recipes);
     });
 
+    // get single recipe by _id
+    app.get("/recipes/:id", async (req, res) => {
+      const id = req.params.id;
+      const recipe = await recipeCollection.findOne({ _id: new ObjectId(id) });
+      if (!recipe) {
+        return res.status(404).json({ message: "Recipe not found" });
+      }
+      res.json(recipe);
+    });
+
     // post new recipe
     app.post("/recipes", async (req, res) => {
       const { creatorEmail } = req.body;
