@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
+const stripe = require("stripe")(process.env.STRIPE);
 
 const cors = require("cors");
 
@@ -211,6 +212,45 @@ const run = async () => {
         res.json(result);
       } else {
         res.status(500).json({ message: "Failed to add recipe" });
+      }
+    });
+
+    //
+    app.post("/create-payment-intent", async (req, res) => {
+      const { dollarAmount } = req.body;
+      const amount = parseInt(dollarAmount * 100);
+      // console.log(amount);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+    app.post("/update-coin-balance", authenticateJWT, async (req, res) => {
+      const { email, coinAmount } = req.body;
+
+      try {
+        const user = await userCollection.findOne({ email });
+
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        const newCoinCount = user.coin + coinAmount;
+
+        await userCollection.updateOne(
+          { email },
+          { $set: { coin: newCoinCount } }
+        );
+
+        res.json({ success: true, newCoinCount });
+      } catch (error) {
+        console.error("Error updating coin balance:", error);
+        res.status(500).json({ message: "Internal server error" });
       }
     });
 
