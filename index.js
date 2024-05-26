@@ -105,6 +105,7 @@ const run = async () => {
               name: 1,
               image: 1,
               country: 1,
+              category: 1,
               creatorEmail: 1,
               purchased_by: 1,
             },
